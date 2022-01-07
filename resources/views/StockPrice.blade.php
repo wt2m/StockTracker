@@ -43,7 +43,7 @@
                             @foreach($stocks as $stock)
                                 <div class="card col-md-5">
                                     <div class="card-body">
-                                        <h5 class="card-title">{{$stock['symbol']}}</h5>
+                                        <h5 class="card-title">{{$stock['symbol']}} <small>R${{isset($stock['lastPrice']) ? $stock['lastPrice'] : $stock['lastSalePrice']}}</small></h5>
                                         <div class="card-text">
                                             <p class="text-success">Compra: <b>R${{round($stock['bidPrice'] * $realDolar, 2)}}</b></p>
                                             <p class="text-danger">Venda: <b>R${{round($stock['bidPrice'] * $realDolar, 2)}}</b></p>
@@ -56,8 +56,13 @@
 
                         {{--Dados de pesquisa de stock específica--}}
                         <div id="stock">
-                                <div>
-                                    <h1 id="symbol">
+                                <div class="justify-content-end row ml-2">
+                                    <button id="refresh" class="btn btn-primary col-md-3">⟲</button>
+                                </div>
+                                <div class="row align-items-end mb-3">
+                                    <h1 id="symbol" class="col-md-3">
+                                    <h1 id="price" class="text-success">
+                                    
                                 </div>
                             <div class="row">
                                 <div class="col-md-6">
@@ -71,8 +76,13 @@
                             </div>
                             
                             <hr>
-                            <div class="form-group row justify-content-end">
-                                <small id="last-update"/>
+                            <div class="justify-content-end row ">
+                                <div class="col-md-5 custom-control custom-checkbox">
+                                    <input type="checkbox" class="custom-control-input" name="self-refresh" id="self-refresh">
+                                    <label class="custom-control-label" for="self-refresh">Atualizar automaticamente</label>
+                                    <br>
+                                    <small id="last-update"/>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -90,6 +100,7 @@
         $( document ).ready(function() {
             $('#stock').hide();
             var stock = '';
+            var retrieve = false;
             $("#btn-search").click(function(){ //Requisição para stock específica
                 stock = $('#cod').val();
                 retrieveStockData(stock);
@@ -98,27 +109,44 @@
                 //exibe o componente de ação unica
                 $('#stock').show();
             });
+
+            $('#refresh').click(function(){
+                retrieveStockData(stock, true, true)
+            });
+
+            $('#self-refresh').click(function() { //Habilitando função de self-refresh
+                if ($(this).is(':checked')) {
+                    $('#refresh').hide();
+                    retrieve = true;
+                }else{
+                    $('#refresh').show();
+                    retrieve = false;
+                }
+            });
+
+    
             window.setInterval(function(){
-                retrieveStockData(stock);
+                retrieveStockData(stock, retrieve, true);
             }, 5000);; //função para atualizar a cada 5 segundos
 
         
         });
-        function retrieveStockData(stock){
-            if(stock != ''){
+        function retrieveStockData(stock, retrieve = true /*variavel para permitir atualizacao autmatica*/, refresh = false){
+            if(stock != '' && retrieve == true){
                 $.ajax({
-                    url       : "/StockData/"+stock,
+                    url       : "/StockData/"+stock+"/"+refresh,
                     type      : 'get',
                     async     : true,
                     success   : function(resp){
                         if (resp.status == true) {
                             //substitui os valores
                             $('#symbol').text(resp.response.symbol)
+                            $('#price').text('R$'+resp.response.lastPrice)
                             $('#bid-price').text('Compra: R$'+resp.response.bidPrice);
                             $('#ask-price').text('Venda: R$'+resp.response.askPrice);
                             $('#sector').text('Setor: ' + resp.response.sector);
                             $('#volume').text('Volume: ' + resp.response.volume);
-                            $('#last-update').text('Ultima atualização:'+resp.date + ' (atualizado a cada 5 segundos)')
+                            $('#last-update').text('Ultima atualização:'+resp.date)
                         } else {
                             alert(resp.response);
                             return false;

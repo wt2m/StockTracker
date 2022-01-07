@@ -15,4 +15,4 @@ use App\Http\Controllers\StockData;
 */
 
 Route::get('/', [StockData::class, 'index'])->name('index');
-Route::get('/StockData/{cod}', [StockData::class, 'retrieve'])->name('stockdata');
+Route::get('/StockData/{cod}/{refresh}', [StockData::class, 'retrieve'])->name('stockdata');
